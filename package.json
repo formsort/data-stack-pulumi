@@ -2,11 +2,12 @@
     "name": "data-stack-pulumi",
     "main": "index.ts",
     "devDependencies": {
-        "@types/node": "^18"
+        "@types/node": "^18",
+        "@types/aws-lambda": "^8.10.131"
     },
     "dependencies": {
-        "@pulumi/pulumi": "^3.0.0",
         "@pulumi/aws": "^6.0.0",
-        "@pulumi/awsx": "^2.0.2"
+        "@pulumi/awsx": "^2.0.2",
+        "@pulumi/pulumi": "^3.0.0"
     }
 }
