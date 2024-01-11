@@ -8,6 +8,7 @@
     "dependencies": {
         "@aws-sdk/client-dynamodb": "^3.490.0",
         "@aws-sdk/client-s3": "^3.490.0",
+        "@aws-sdk/util-dynamodb": "^3.490.0",
         "@pulumi/aws": "^6.0.0",
         "@pulumi/awsx": "^2.0.2",
         "@pulumi/pulumi": "^3.0.0",

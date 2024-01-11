@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 
 import answersWebhookHandler from './answers-webhook-handler';
+import answersRetrievalHandler from './answers-retrieval-handler';
 
 const RESOURCE_NAME = 'my-formsort-answers';
 
@@ -14,7 +15,7 @@ const answersTable = new aws.dynamodb.Table('answersWebhookTable', {
   billingMode: 'PAY_PER_REQUEST',
 });
 
-// Define the webhook to receive answers
+// Define the webhook to store answers
 const answersWebhookLambda = new aws.lambda.CallbackFunction(
   'answers-webhook-handler',
   {
@@ -22,6 +23,19 @@ const answersWebhookLambda = new aws.lambda.CallbackFunction(
     environment: {
       variables: {
         ANSWERS_BUCKET_NAME: answersBucket.id,
+        ANSWERS_DYNAMO_TABLE_NAME: answersTable.name,
+      },
+    },
+  }
+);
+
+// Define the webhook to retrieve answers
+const answersRetrievalLambda = new aws.lambda.CallbackFunction(
+  'answers-retrieval-handler',
+  {
+    callback: answersRetrievalHandler,
+    environment: {
+      variables: {
         ANSWERS_DYNAMO_TABLE_NAME: answersTable.name,
       },
     },
@@ -36,6 +50,11 @@ const endpoint = new awsx.classic.apigateway.API(RESOURCE_NAME, {
       method: 'POST',
       eventHandler: answersWebhookLambda,
       contentType: 'application/json',
+    },
+    {
+      path: '/api/answers-retrieval',
+      method: 'GET',
+      eventHandler: answersRetrievalLambda,
     },
   ],
 });
