@@ -8,6 +8,12 @@ const RESOURCE_NAME = 'my-formsort-answers';
 // Create an S3 bucket to store received webhooks
 const answersBucket = new aws.s3.Bucket(RESOURCE_NAME);
 
+const answersTable = new aws.dynamodb.Table('answersWebhookTable', {
+  attributes: [{ name: 'responder_uuid', type: 'S' }],
+  hashKey: 'responder_uuid',
+  billingMode: 'PAY_PER_REQUEST',
+});
+
 // Define the webhook to receive answers
 const answersWebhookLambda = new aws.lambda.CallbackFunction(
   'answers-webhook-handler',
@@ -16,6 +22,7 @@ const answersWebhookLambda = new aws.lambda.CallbackFunction(
     environment: {
       variables: {
         ANSWERS_BUCKET_NAME: answersBucket.id,
+        ANSWERS_DYNAMO_TABLE_NAME: answersTable.name,
       },
     },
   }

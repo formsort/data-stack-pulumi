@@ -6,6 +6,7 @@
         "@types/node": "^18"
     },
     "dependencies": {
+        "@aws-sdk/client-dynamodb": "^3.490.0",
         "@aws-sdk/client-s3": "^3.490.0",
         "@pulumi/aws": "^6.0.0",
         "@pulumi/awsx": "^2.0.2",

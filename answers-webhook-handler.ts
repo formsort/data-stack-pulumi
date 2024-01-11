@@ -1,24 +1,10 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
 
 import * as z from 'zod';
 
 export const answersWebhookHandler: APIGatewayProxyHandler = async (event) => {
-  const s3 = new S3Client({ region: process.env.AWS_REGION });
-
-  if (!process.env.ANSWERS_BUCKET_NAME) {
-    return {
-      statusCode: 500,
-      headers: {
-        ContentType: 'application/json',
-      },
-      body: JSON.stringify({
-        message:
-          'ANSWERS_BUCKET_NAME must be defined in the lambda environment',
-      }),
-    };
-  }
-
   if (!event.body) {
     return {
       statusCode: 400,
@@ -74,8 +60,22 @@ export const answersWebhookHandler: APIGatewayProxyHandler = async (event) => {
       }),
     };
   }
+  const { data } = parseResult;
 
   // Upload the body to S3
+  if (!process.env.ANSWERS_BUCKET_NAME) {
+    return {
+      statusCode: 500,
+      headers: {
+        ContentType: 'application/json',
+      },
+      body: JSON.stringify({
+        message:
+          'ANSWERS_BUCKET_NAME must be defined in the lambda environment',
+      }),
+    };
+  }
+  const s3 = new S3Client({ region: process.env.AWS_REGION });
   await s3.send(
     new PutObjectCommand({
       Bucket: process.env.ANSWERS_BUCKET_NAME,
@@ -84,6 +84,45 @@ export const answersWebhookHandler: APIGatewayProxyHandler = async (event) => {
       ContentType: 'application/json',
     })
   );
+
+  // Write the body to Dynamo as well
+  if (!process.env.ANSWERS_DYNAMO_TABLE_NAME) {
+    return {
+      statusCode: 500,
+      headers: {
+        ContentType: 'application/json',
+      },
+      body: JSON.stringify({
+        message:
+          'ANSWERS_DYNAMO_TABLE_NAME must be defined in the lambda environment',
+      }),
+    };
+  }
+  const dynamoDBClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+  const item = {
+    responder_uuid: { S: data.responder_uuid },
+    answers: { S: JSON.stringify(data.answers) },
+    flow_label: { S: data.flow_label },
+    variant_label: { S: data.variant_label },
+    variant_uuid: { S: data.variant_uuid },
+    finalized: { BOOL: data.finalized },
+    created_at: { S: data.created_at },
+  };
+
+  try {
+    await dynamoDBClient.send(
+      new PutItemCommand({
+        TableName: process.env.ANSWERS_DYNAMO_TABLE_NAME,
+        Item: item,
+      })
+    );
+  } catch (error) {
+    console.error('Error writing to DynamoDB:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error?.message }),
+    };
+  }
 
   return {
     statusCode: 200,
