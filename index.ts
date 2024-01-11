@@ -1,4 +1,3 @@
-// import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 
@@ -30,11 +29,6 @@ const endpoint = new awsx.classic.apigateway.API(RESOURCE_NAME, {
       method: 'POST',
       eventHandler: answersWebhookLambda,
       contentType: 'application/json',
-    },
-    {
-      path: '/api/answers-ingest',
-      method: 'GET',
-      eventHandler: answersWebhookLambda,
     },
   ],
 });
