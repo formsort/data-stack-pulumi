@@ -1,2 +1,4 @@
 config:
   aws:region: us-east-2
+  data-stack-pulumi:formsortAPIKey: DEdBEYo86X26Nd9uH52OA1iDPhFpRuYA5bSJlowR
+  data-stack-pulumi:formsortWebhookSigningKey: 005c7165-f886-4777-9b1b-f0a0ad47dea5
