@@ -1,10 +1,11 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
+import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
 import {
-  DynamoDBClient,
-  PutItemCommand,
-  QueryCommand,
-} from '@aws-sdk/client-dynamodb';
-import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import * as z from 'zod';
 
 const DEFAULT_FORMAT = 'json';
@@ -103,29 +104,35 @@ export const queryResponderHandler: APIGatewayProxyHandler = async (event) => {
 
   for (const variantRevisionUuid of variantRevisionUuids) {
     let flowContent: any;
+
+    const s3Client = new S3Client({ region: process.env.AWS_REGION });
     try {
-      const result = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: process.env.FLOW_CONTENTS_TABLE_NAME,
-          KeyConditionExpression: 'variant_revision_uuid = :uuid',
-          ExpressionAttributeValues: {
-            ':uuid': { S: variantRevisionUuid },
-          },
+      const response = await s3Client.send(
+        new GetObjectCommand({
+          Bucket: process.env.FLOW_CONTENTS_BUCKET_ID,
+          Key: `${variantRevisionUuid}.json`,
         })
       );
-
-      const item = result.Items?.at(0);
-      if (item) {
-        flowContent = unmarshall(item)['flow_content'];
+      const str = await response.Body?.transformToString();
+      if (!str) {
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            error: 'Failed to read caches flow content as string',
+          }),
+        };
       }
+      flowContent = JSON.parse(str);
     } catch (error) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: 'Failed to query flow contents cache',
-          detail: error?.message,
-        }),
-      };
+      if (error.name !== 'NoSuchKey') {
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            error: 'Failed to fetch flow content from cache',
+            detail: error?.message,
+          }),
+        };
+      }
     }
 
     if (!flowContent) {
@@ -153,13 +160,12 @@ export const queryResponderHandler: APIGatewayProxyHandler = async (event) => {
     }
 
     try {
-      await dynamoDBClient.send(
-        new PutItemCommand({
-          TableName: process.env.FLOW_CONTENTS_TABLE_NAME,
-          Item: marshall({
-            variant_revision_uuid: variantRevisionUuid,
-            flow_content: flowContent,
-          }),
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: process.env.FLOW_CONTENTS_BUCKET_ID,
+          Key: `${variantRevisionUuid}.json`,
+          Body: JSON.stringify(flowContent),
+          ContentType: 'application/json',
         })
       );
     } catch (error) {
