@@ -1,6 +1,10 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
-import { unmarshall } from '@aws-sdk/util-dynamodb';
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  QueryCommand,
+} from '@aws-sdk/client-dynamodb';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import * as z from 'zod';
 
 const DEFAULT_FORMAT = 'json';
@@ -39,6 +43,10 @@ export const queryResponderHandler: APIGatewayProxyHandler = async (event) => {
       }),
     };
   }
+
+  const dynamoDBClient = new DynamoDBClient({
+    region: process.env.AWS_REGION,
+  });
   try {
     const queryCommand = new QueryCommand({
       TableName: process.env.ANSWERS_DYNAMO_TABLE_NAME,
@@ -48,9 +56,6 @@ export const queryResponderHandler: APIGatewayProxyHandler = async (event) => {
       },
     });
 
-    const dynamoDBClient = new DynamoDBClient({
-      region: process.env.AWS_REGION,
-    });
     const data = await dynamoDBClient.send(queryCommand);
     if (!data.Items?.length) {
       return {
@@ -97,17 +102,76 @@ export const queryResponderHandler: APIGatewayProxyHandler = async (event) => {
   const flowContents: any = {};
 
   for (const variantRevisionUuid of variantRevisionUuids) {
-    // TODO: Check the cache first for a variant revision
-    const res = await fetch(
-      `https://api.formsort.com/alpha/variant-revisions/${variantRevisionUuid}`,
-      {
-        headers: {
-          'X-API-KEY': process.env.FORMSORT_API_KEY,
-        },
+    let flowContent: any;
+    try {
+      const result = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: process.env.FLOW_CONTENTS_TABLE_NAME,
+          KeyConditionExpression: 'variant_revision_uuid = :uuid',
+          ExpressionAttributeValues: {
+            ':uuid': { S: variantRevisionUuid },
+          },
+        })
+      );
+
+      const item = result.Items?.at(0);
+      if (item) {
+        flowContent = unmarshall(item)['flow_content'];
       }
-    );
-    const variantRevisionJSON = await res.json();
-    flowContents[variantRevisionUuid] = variantRevisionJSON['flowContent'];
+    } catch (error) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: 'Failed to query flow contents cache',
+          detail: error?.message,
+        }),
+      };
+    }
+
+    if (!flowContent) {
+      const res = await fetch(
+        `https://api.formsort.com/alpha/variant-revisions/${variantRevisionUuid}`,
+        {
+          headers: {
+            'X-API-KEY': process.env.FORMSORT_API_KEY,
+          },
+        }
+      );
+      if (!res.ok || res.status != 200) {
+        return {
+          statusCode: 503,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            error: `Failed to retrieve variant revision data for uuid ${variantRevisionUuid}`,
+          }),
+        };
+      }
+      const variantRevisionJSON = await res.json();
+      flowContent = variantRevisionJSON.flowContent;
+    }
+
+    try {
+      await dynamoDBClient.send(
+        new PutItemCommand({
+          TableName: process.env.FLOW_CONTENTS_TABLE_NAME,
+          Item: marshall({
+            variant_revision_uuid: variantRevisionUuid,
+            flow_content: flowContent,
+          }),
+        })
+      );
+    } catch (error) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: 'Error saving flow contents in cache',
+          detail: error?.message,
+        }),
+      };
+    }
+    flowContents[variantRevisionUuid] = flowContent;
   }
 
   if (format === 'html') {

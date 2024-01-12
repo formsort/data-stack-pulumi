@@ -19,6 +19,12 @@ const answersTable = new aws.dynamodb.Table('answersWebhookTable', {
   billingMode: 'PAY_PER_REQUEST',
 });
 
+const flowContentsTable = new aws.dynamodb.Table('flowContents', {
+  attributes: [{ name: 'variant_revision_uuid', type: 'S' }],
+  hashKey: 'variant_revision_uuid',
+  billingMode: 'PAY_PER_REQUEST',
+});
+
 // Define the webhook to store answers
 const answersWebhookLambda = new aws.lambda.CallbackFunction(
   'answers-webhook-handler',
@@ -44,6 +50,7 @@ const answersRetrievalLambda = new aws.lambda.CallbackFunction(
     environment: {
       variables: {
         ANSWERS_DYNAMO_TABLE_NAME: answersTable.name,
+        FLOW_CONTENTS_TABLE_NAME: flowContentsTable.name,
         FORMSORT_API_KEY: formsortAPIKey ?? '',
       },
     },

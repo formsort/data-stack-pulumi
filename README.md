@@ -11,7 +11,6 @@
 
 # TODO
 
-- Cache of flow contents in dynamo
 - Receive flow contents on published event
 - Put flowContent type definition in the docs for admin API
 - HTML view

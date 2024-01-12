@@ -130,8 +130,10 @@ export const answersWebhookHandler: APIGatewayProxyHandler = async (event) => {
       }),
     };
   }
-  const dynamoDBClient = new DynamoDBClient({ region: process.env.AWS_REGION });
   try {
+    const dynamoDBClient = new DynamoDBClient({
+      region: process.env.AWS_REGION,
+    });
     await dynamoDBClient.send(
       new PutItemCommand({
         TableName: process.env.ANSWERS_DYNAMO_TABLE_NAME,
@@ -150,6 +152,7 @@ export const answersWebhookHandler: APIGatewayProxyHandler = async (event) => {
 
   return {
     statusCode: 204,
+    body: '',
   };
 };
 
