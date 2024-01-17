@@ -11,8 +11,8 @@ const ANSWERS_WEBHOOK_PATH = 'api/answers-ingest';
 const DEPLOYED_WEBHOOK_PATH = 'api/variant-revision-deployed';
 
 const config = new pulumi.Config();
-const formsortAPIKey = config.get('formsortAPIKey');
-const formsortWebhookSigningKey = config.get('formsortWebhookSigningKey');
+const formsortAPIKey = config.getSecret('formsortAPIKey');
+const formsortWebhookSigningKey = config.getSecret('formsortWebhookSigningKey');
 
 // Create an S3 bucket to store received answer webhooks
 const answersBucket = new aws.s3.Bucket(RESOURCE_NAME);

@@ -5,12 +5,13 @@
 2. Generate an access key for that user
 3. Update your `/.aws/credentials` to include the access key and secret in a profile
 4. Ensure the AWS region `pulumi config set aws:region us-west-2`
-5. If you want to pull out HTML pages or PDFs, get your Formsort API key and set it using `pulumi config set formsortAPIKey {YOUR_API_KEY}`.
-6. If you want to verify webhook payloads are coming from formsort, get your webhook signing key set it in the pulumi project using `pulumi config set formsortWebhookSigningKey {YOUR_SIGNING_KEY}`. Note that this is not the same key as the general API key.
+5. If you want to pull out HTML pages or PDFs, get your Formsort API key and set it using `pulumi config set --secret formsortAPIKey {YOUR_API_KEY}`.
+6. If you want to verify webhook payloads are coming from formsort, get your webhook signing key set it in the pulumi project using `pulumi config set --secret formsortWebhookSigningKey {YOUR_SIGNING_KEY}`. Note that this is not the same key as the general API key.
 7. Deploy the stack using `AWS_PROFILE=your_profile_name pulumi up`
 
 # TODO
 
+- Add file upload bucket!
 - Receive flow contents on published event
 - Put flowContent type definition in the docs for admin API
 - HTML view

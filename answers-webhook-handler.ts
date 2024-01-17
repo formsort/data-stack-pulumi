@@ -72,8 +72,8 @@ export const answersWebhookHandler: APIGatewayProxyHandler = async (event) => {
 
   const answersWebhookPayloadSchema = z.object({
     answers: z.any(),
-    responder_uuid: z.string().uuid(),
     flow_label: z.string(),
+    responder_uuid: z.string().uuid(),
     variant_label: z.string(),
     variant_uuid: z.string().uuid(),
     finalized: z.boolean(),
