@@ -9,6 +9,7 @@ import variantRevisionDeployedHandler from './variant-revision-deployed-handler'
 const RESOURCE_NAME = 'my-formsort-answers';
 const ANSWERS_WEBHOOK_PATH = 'api/answers-ingest';
 const DEPLOYED_WEBHOOK_PATH = 'api/variant-revision-deployed';
+const ANSWERS_RETRIEVAL_PATH = 'api/answers-retrieval';
 
 const config = new pulumi.Config();
 const formsortAPIKey = config.getSecret('formsortAPIKey');
@@ -77,8 +78,8 @@ const endpoint = new awsx.classic.apigateway.API(RESOURCE_NAME, {
       contentType: 'application/json',
     },
     {
-      // TODO: Make note about authorizers
-      path: '/api/answers-retrieval',
+      // TODO: This route needs an authorizer, otherwise anyone is able to retrieve answers.
+      path: `/${ANSWERS_RETRIEVAL_PATH}`,
       method: 'GET',
       eventHandler: answersRetrievalLambda,
     },
@@ -92,5 +93,6 @@ const endpoint = new awsx.classic.apigateway.API(RESOURCE_NAME, {
 });
 
 // Export variables useful for configuration
-// TODO: Export specifically the answers and deployment webhook.
-export const endpointUrl = endpoint.url;
+export const answersWebhookURL = pulumi.interpolate`${endpoint.url}${ANSWERS_WEBHOOK_PATH}`;
+export const deploymentEventURL = pulumi.interpolate`${endpoint.url}${DEPLOYED_WEBHOOK_PATH}`;
+export const answersRetrievalURL = pulumi.interpolate`${endpoint.url}${ANSWERS_RETRIEVAL_PATH}`;
