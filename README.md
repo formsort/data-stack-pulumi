@@ -4,7 +4,7 @@ An [AWS](https://aws.amazon.com) environment pre-configured to receive data from
 
 # Features
 
-- Receives answer [webhooks](https://docs.formsort.com/handling-data/integration-reference/webhooks) when from Formsort and stores them in both [S3](https://aws.amazon.com/s3/) and [DynamoDB](https://aws.amazon.com/dynamodb/).
+- Receives answer [webhooks](https://docs.formsort.com/handling-data/integration-reference/webhooks) from Formsort and stores them in both [S3](https://aws.amazon.com/s3/) and [DynamoDB](https://aws.amazon.com/dynamodb/).
 - Receives [deployment events](https://docs.formsort.com/teams/event-subscriptions) when a new revision of a flow is deployed in Formsort.
 - Allows retrieving answer data by [responder UUID](https://docs.formsort.com/handling-data/responder-uuids), in either JSON or HTML format.
 
@@ -20,8 +20,8 @@ The stack creates two S3 buckets -- one for the definitions of the forms you dep
 
 An API gateway is created with three routes:
 
-1. The `/variant-revision-deployed` route receives a POST request of when a flow is deployed and triggers a lambda invocation that saves the flow content to S3. The flow contents of a deployed variant revision are immutable, and so can be used to reconstruct the form for any answers submission.
-2. The `/answers-ingest` endpoint receives a POST request whenever a responder provides data within a deployed form flow. It invokes a lambda that saves the content of the answers to both S3 and Dynamo DB
+1. The `/variant-revision-deployed` route receives a POST request containing flow content when a flow is deployed. This request triggers a lambda invocation that saves the flow content to S3. The flow content of a deployed variant revision is immutable and can be used to reconstruct answers submissions.
+2. The `/answers-ingest` endpoint receives a POST request whenever a responder provides data within a deployed flow. It invokes a lambda that saves the content of the answers to both S3 and Dynamo DB
 3. The `/answers-retrieval` endpoint allows for retrieving answers by responder UUID, which is passed as a URL parameter (`?responderUuid=`) HTML can be specified by adding `&format=html` as a URL search parameter.
 
 ```
