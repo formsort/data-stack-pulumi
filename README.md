@@ -11,7 +11,7 @@ An [AWS](https://aws.amazon.com) environment pre-configured to receive data from
 # Caveats
 
 - **This stack has no authentication for data retrieval**. The URLs that it creates are random but publicly accessible. You will need to add authentication if you want to use data retrieval in production.
-- While [AWS can be configured to be HIIPA compliant](https://aws.amazon.com/compliance/hipaa-compliance/), **running this stack does not give you any compliance certification out-of-the-box**.
+- While [AWS can be configured to be HIPAA compliant](https://aws.amazon.com/compliance/hipaa-compliance/), **running this stack does not give you any compliance certification out-of-the-box**.
 - The Formsort team is happy to help answer general questions about architecture, and make improvements, but if you need us to run this stack for you, [please contact sales](https://signup.formsort.com/).
 
 # Architecture overview
